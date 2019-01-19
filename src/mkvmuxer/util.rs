@@ -1,3 +1,5 @@
+use rand::Rng;
+
 const EBML_UNKNOWN_VALUE: u64 = 0x01FFFFFFFFFFFFFF;
 const MAX_BLOCK_TIMECODE: i64 = 0x07FFF;
 
@@ -144,4 +146,17 @@ fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
     } else {
         0
     }
+}
+
+fn GetVersion(major: &mut i32, minor:&mut i32, build:&mut i32, revision:&mut i32) {
+    *major = 0;
+    *minor = 2;
+    *build = 1;
+    *revision = 0;
+}
+
+fn MakeUID()->u64 {
+    let mut rng = rand::thread_rng();
+    let uid:u64 = rng.gen();
+    return uid;
 }

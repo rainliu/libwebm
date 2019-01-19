@@ -1,3 +1,5 @@
+
+mod colour;
 mod util;
 
 pub mod muxer;
