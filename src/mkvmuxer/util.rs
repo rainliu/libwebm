@@ -228,8 +228,29 @@ fn EbmlElementSizeArgI64(t: u64, value: i64) -> u64 {
     ebml_size
 }
 
+fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
+    if WriteID(writer, t).is_err() {
+        return false;
+    }
+
+    let size = GetIntSize(value);
+    if WriteUInt(writer, size as u64).is_err() {
+        return false;
+    }
+
+    if SerializeInt(writer, value as u64, size).is_err() {
+        return false;
+    }
+
+    true
+}
+
 fn EbmlElementSizeArgU64(t: u64, value: u64) -> u64 {
     EbmlElementSizeArgsU64(t, value, 0)
+}
+
+fn WriteEbmlElementArgU64(writer: &mut dyn Writer, t: u64, value: u64) -> bool {
+    WriteEbmlElementArgsU64(writer, t, value, 0)
 }
 
 fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
@@ -240,6 +261,22 @@ fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
     // Size of Datasize
     ebml_size += 1;
     ebml_size
+}
+
+fn WriteEbmlElement(writer: &mut dyn Writer, t: u64, value: f32) -> bool {
+    if WriteID(writer, t).is_err() {
+        return false;
+    }
+
+    if WriteUInt(writer, 4).is_err() {
+        return false;
+    }
+
+    if SerializeFloat(writer, value).is_err() {
+        return false;
+    }
+
+    true
 }
 
 fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
@@ -256,6 +293,29 @@ fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
     ebml_size
 }
 
+fn WriteEbmlElementArgsU64(writer: &mut dyn Writer, t: u64, value: u64, fixed_size: u64) -> bool {
+    if WriteID(writer, t).is_err() {
+        return false;
+    }
+
+    let mut size: u64 = GetUIntSize(value) as u64;
+    if fixed_size > 0 {
+        if size > fixed_size {
+            return false;
+        }
+        size = fixed_size;
+    }
+    if WriteUInt(writer, size).is_err() {
+        return false;
+    }
+
+    if SerializeInt(writer, value, size as i32).is_err() {
+        return false;
+    }
+
+    true
+}
+
 fn EbmlElementSizeArgStr(t: u64, value: Option<&str>) -> u64 {
     if let Some(value) = value {
         // Size of EBML ID
@@ -270,6 +330,23 @@ fn EbmlElementSizeArgStr(t: u64, value: Option<&str>) -> u64 {
     }
 }
 
+fn WriteEbmlElementArgStr(writer:&mut dyn Writer, t:u64, value:&str) -> bool{
+    if WriteID(writer, t).is_err() {
+        return false;
+    }
+
+    let length = value.len() as u64;
+    if WriteUInt(writer, length).is_err() {
+        return false;
+    }
+
+    if writer.write(value.as_bytes()).is_err() {
+        return false;
+    }
+
+    return true;
+}
+
 fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
     if let Some(_value) = value {
         // Size of EBML ID
@@ -282,4 +359,24 @@ fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
     } else {
         0
     }
+}
+
+fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8], size: u64) -> bool {
+    if size < 1 || value.len() != size as usize {
+        return false;
+    }
+
+    if WriteID(writer, t).is_err() {
+        return false;
+    }
+
+    if WriteUInt(writer, size).is_err() {
+        return false;
+    }
+
+    if writer.write(value).is_err() {
+        return false;
+    }
+
+    true
 }
