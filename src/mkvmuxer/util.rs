@@ -2,6 +2,7 @@ use super::writer::Writer;
 use rand::Rng;
 use std::io;
 use std::io::{Error, ErrorKind};
+use crate::common::MkvId;
 
 const EBML_UNKNOWN_VALUE: u64 = 0x01FFFFFFFFFFFFFF;
 const MAX_BLOCK_TIMECODE: i64 = 0x07FFF;
@@ -330,7 +331,7 @@ fn EbmlElementSizeArgStr(t: u64, value: Option<&str>) -> u64 {
     }
 }
 
-fn WriteEbmlElementArgStr(writer:&mut dyn Writer, t:u64, value:&str) -> bool{
+fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -379,4 +380,37 @@ fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8], size:
     }
 
     true
+}
+
+fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
+    // Subtract one for the void ID and the coded size.
+    let void_entry_size: u64 = size - 1 - GetCodedUIntSize(size - 1) as u64;
+    let void_size: u64 =
+        EbmlMasterElementSize(MkvId::MkvVoid as u64, void_entry_size) + void_entry_size;
+
+    if void_size != size {
+        return 0;
+    }
+
+    let payload_position = writer.get_position();
+
+    if WriteID(writer, MkvId::MkvVoid as u64).is_err() {
+        return 0;
+    }
+
+    if WriteUInt(writer, void_entry_size).is_err() {
+        return 0;
+    }
+
+    let value = vec![0; void_entry_size as usize];
+    if writer.write(&value).is_err() {
+        return 0;
+    }
+
+    let stop_position = writer.get_position();
+    if stop_position - payload_position != void_size {
+        return 0;
+    }
+
+    return void_size;
 }
