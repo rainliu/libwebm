@@ -5,7 +5,7 @@ use crate::common::MkvId;
 ///////////////////////////////////////////////////////////////
 // Class to hold one cue point in a Cues element.
 #[derive(Debug, Clone)]
-struct CuePoint {
+pub struct CuePoint {
     // Absolute timecode according to the segment time base.
     time_: u64,
 
