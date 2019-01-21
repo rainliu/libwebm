@@ -4,9 +4,6 @@ use std::io::prelude::*;
 use std::io::SeekFrom;
 use std::io::{Error, ErrorKind};
 
-const DOC_TYPE_WEBM: &'static str = "webm";
-const DOC_TYPE_MATROSKA: &'static str = "matroska";
-
 pub trait Writer {
     fn write(&mut self, buf: &[u8]) -> io::Result<()>;
     fn get_position(&self) -> u64;
