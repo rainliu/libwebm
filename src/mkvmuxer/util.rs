@@ -169,7 +169,7 @@ fn WriteID(writer: &mut dyn Writer, t: u64) -> io::Result<()> {
     SerializeInt(writer, t, size)
 }
 
-fn EbmlMasterElementSize(t: u64, _value: u64) -> u64 {
+pub fn EbmlMasterElementSize(t: u64, _value: u64) -> u64 {
     // Size of EBML ID
     let mut ebml_size: i32 = GetUIntSize(t);
     // Datasize
@@ -177,7 +177,7 @@ fn EbmlMasterElementSize(t: u64, _value: u64) -> u64 {
     ebml_size as u64
 }
 
-fn WriteEbmlMasterElement(writer: &mut dyn Writer, t: u64, size: u64) -> bool {
+pub fn WriteEbmlMasterElement(writer: &mut dyn Writer, t: u64, size: u64) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -187,7 +187,7 @@ fn WriteEbmlMasterElement(writer: &mut dyn Writer, t: u64, size: u64) -> bool {
     true
 }
 
-fn EbmlDateElementSize(t: u64) -> u64 {
+pub fn EbmlDateElementSize(t: u64) -> u64 {
     // Size of EBML ID
     let mut ebml_size: u64 = GetUIntSize(t) as u64;
     // Datasize
@@ -197,7 +197,7 @@ fn EbmlDateElementSize(t: u64) -> u64 {
     ebml_size
 }
 
-fn WriteEbmlDateElement(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
+pub fn WriteEbmlDateElement(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -213,16 +213,7 @@ fn WriteEbmlDateElement(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
     true
 }
 
-/*pub enum EbmlElementSizeArguments {
-    ArgI64(i64),
-    ArgU64(u64),
-    ArgF32(f32),
-    ArgsU64(u64, u64),
-    ArgStr(Option<&str>),
-    ArgSlice(Option<&[u8]>, u64),
-}*/
-
-fn EbmlElementSizeArgI64(t: u64, value: i64) -> u64 {
+pub fn EbmlElementSizeArgI64(t: u64, value: i64) -> u64 {
     // Size of EBML ID
     let mut ebml_size: u64 = GetUIntSize(t) as u64;
     // Datasize
@@ -232,7 +223,7 @@ fn EbmlElementSizeArgI64(t: u64, value: i64) -> u64 {
     ebml_size
 }
 
-fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
+pub fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -249,15 +240,15 @@ fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
     true
 }
 
-fn EbmlElementSizeArgU64(t: u64, value: u64) -> u64 {
+pub fn EbmlElementSizeArgU64(t: u64, value: u64) -> u64 {
     EbmlElementSizeArgsU64(t, value, 0)
 }
 
-fn WriteEbmlElementArgU64(writer: &mut dyn Writer, t: u64, value: u64) -> bool {
+pub fn WriteEbmlElementArgU64(writer: &mut dyn Writer, t: u64, value: u64) -> bool {
     WriteEbmlElementArgsU64(writer, t, value, 0)
 }
 
-fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
+pub fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
     // Size of EBML ID
     let mut ebml_size: u64 = GetUIntSize(t) as u64;
     // Datasize
@@ -267,7 +258,7 @@ fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
     ebml_size
 }
 
-fn WriteEbmlElementArgF32(writer: &mut dyn Writer, t: u64, value: f32) -> bool {
+pub fn WriteEbmlElementArgF32(writer: &mut dyn Writer, t: u64, value: f32) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -283,7 +274,7 @@ fn WriteEbmlElementArgF32(writer: &mut dyn Writer, t: u64, value: f32) -> bool {
     true
 }
 
-fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
+pub fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
     // Size of EBML ID
     let mut ebml_size: u64 = GetUIntSize(t) as u64;
     // Datasize
@@ -297,7 +288,12 @@ fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
     ebml_size
 }
 
-fn WriteEbmlElementArgsU64(writer: &mut dyn Writer, t: u64, value: u64, fixed_size: u64) -> bool {
+pub fn WriteEbmlElementArgsU64(
+    writer: &mut dyn Writer,
+    t: u64,
+    value: u64,
+    fixed_size: u64,
+) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -320,7 +316,7 @@ fn WriteEbmlElementArgsU64(writer: &mut dyn Writer, t: u64, value: u64, fixed_si
     true
 }
 
-fn EbmlElementSizeArgStr(t: u64, value: &str) -> u64 {
+pub fn EbmlElementSizeArgStr(t: u64, value: &str) -> u64 {
     // Size of EBML ID
     let mut ebml_size: u64 = GetUIntSize(t) as u64;
     // Datasize
@@ -330,7 +326,7 @@ fn EbmlElementSizeArgStr(t: u64, value: &str) -> u64 {
     ebml_size
 }
 
-fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> bool {
+pub fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -347,7 +343,7 @@ fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> bool 
     return true;
 }
 
-fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
+pub fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
     if let Some(_value) = value {
         // Size of EBML ID
         let mut ebml_size: u64 = GetUIntSize(t) as u64;
@@ -361,7 +357,7 @@ fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
     }
 }
 
-fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8], size: u64) -> bool {
+pub fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8], size: u64) -> bool {
     if size < 1 || value.len() != size as usize {
         return false;
     }
@@ -381,7 +377,7 @@ fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8], size:
     true
 }
 
-fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
+pub fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
     // Subtract one for the void ID and the coded size.
     let void_entry_size: u64 = size - 1 - GetCodedUIntSize(size - 1) as u64;
     let void_size: u64 =
@@ -414,7 +410,7 @@ fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
     return void_size;
 }
 
-fn WriteEbmlHeader(writer: &mut dyn Writer, doc_type_version: u64, doc_type: &str) -> bool {
+pub fn WriteEbmlHeader(writer: &mut dyn Writer, doc_type_version: u64, doc_type: &str) -> bool {
     // Level 0
     let mut size: u64 = EbmlElementSizeArgU64(MkvId::MkvEBMLVersion as u64, 1);
     size += EbmlElementSizeArgU64(MkvId::MkvEBMLReadVersion as u64, 1);
@@ -452,7 +448,7 @@ fn WriteEbmlHeader(writer: &mut dyn Writer, doc_type_version: u64, doc_type: &st
     true
 }
 
-fn WriteEbmlHeader2(writer:&mut dyn Writer,  doc_type_version: u64) ->bool{
+pub fn WriteEbmlHeader2(writer: &mut dyn Writer, doc_type_version: u64) -> bool {
     WriteEbmlHeader(writer, doc_type_version, DOC_TYPE_WEBM)
 }
 
