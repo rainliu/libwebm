@@ -113,7 +113,22 @@ impl PrimaryChromaticity {
         self.y_ = new_y;
     }
 
-    pub fn PrimaryChromaticitySize(&self, x_id: MkvId, y_id: MkvId) -> u64 {
+    pub fn Size(&self, x_id: MkvId, y_id: MkvId) -> u64 {
         util::EbmlElementSizeArgF32(x_id, self.x_) + util::EbmlElementSizeArgF32(y_id, self.y_)
+    }
+
+    pub fn Write(&self, writer: &mut dyn Writer, x_id: MkvId, y_id: MkvId) -> bool {
+        if !self.Valid() {
+            return false;
+        }
+        util::WriteEbmlElementArgF32(writer, x_id, self.x_)
+            && util::WriteEbmlElementArgF32(writer, y_id, self.y_)
+    }
+
+    pub fn Valid(&self) -> bool {
+        self.x_ >= Self::kChromaticityMin
+            && self.x_ <= Self::kChromaticityMax
+            && self.y_ >= Self::kChromaticityMin
+            && self.y_ <= Self::kChromaticityMax
     }
 }
