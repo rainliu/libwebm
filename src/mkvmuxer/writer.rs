@@ -1,3 +1,4 @@
+use crate::MkvId;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
@@ -9,7 +10,7 @@ pub trait Writer {
     fn get_position(&self) -> u64;
     fn set_position(&mut self, position: u64) -> io::Result<u64>;
     fn seekable(&self) -> bool;
-    fn element_start_notify(&self, _element_id: u64, _position: u64) {}
+    fn element_start_notify(&self, _element_id: MkvId, _position: u64) {}
 }
 
 pub struct MkvWriter {

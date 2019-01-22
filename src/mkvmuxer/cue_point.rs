@@ -71,46 +71,37 @@ impl CuePoint {
         }
 
         let mut size: u64 =
-            util::EbmlElementSizeArgU64(MkvId::MkvCueClusterPosition as u64, self.cluster_pos_);
-        size += util::EbmlElementSizeArgU64(MkvId::MkvCueTrack as u64, self.track_);
+            util::EbmlElementSizeArgU64(MkvId::MkvCueClusterPosition, self.cluster_pos_);
+        size += util::EbmlElementSizeArgU64(MkvId::MkvCueTrack, self.track_);
         if self.output_block_number_ && self.block_number_ > 1 {
-            size +=
-                util::EbmlElementSizeArgU64(MkvId::MkvCueBlockNumber as u64, self.block_number_);
+            size += util::EbmlElementSizeArgU64(MkvId::MkvCueBlockNumber, self.block_number_);
         }
         let track_pos_size: u64 =
-            util::EbmlMasterElementSize(MkvId::MkvCueTrackPositions as u64, size) + size;
+            util::EbmlMasterElementSize(MkvId::MkvCueTrackPositions, size) + size;
         let payload_size: u64 =
-            util::EbmlElementSizeArgU64(MkvId::MkvCueTime as u64, self.time_) + track_pos_size;
+            util::EbmlElementSizeArgU64(MkvId::MkvCueTime, self.time_) + track_pos_size;
 
-        if !util::WriteEbmlMasterElement(writer, MkvId::MkvCuePoint as u64, payload_size) {
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvCuePoint, payload_size) {
             return false;
         }
 
         let payload_position = writer.get_position();
 
-        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvCueTime as u64, self.time_) {
+        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvCueTime, self.time_) {
             return false;
         }
 
-        if !util::WriteEbmlMasterElement(writer, MkvId::MkvCueTrackPositions as u64, size) {
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvCueTrackPositions, size) {
             return false;
         }
-        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvCueTrack as u64, self.track_) {
+        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvCueTrack, self.track_) {
             return false;
         }
-        if !util::WriteEbmlElementArgU64(
-            writer,
-            MkvId::MkvCueClusterPosition as u64,
-            self.cluster_pos_,
-        ) {
+        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvCueClusterPosition, self.cluster_pos_) {
             return false;
         }
         if self.output_block_number_ && self.block_number_ > 1 {
-            if !util::WriteEbmlElementArgU64(
-                writer,
-                MkvId::MkvCueBlockNumber as u64,
-                self.block_number_,
-            ) {
+            if !util::WriteEbmlElementArgU64(writer, MkvId::MkvCueBlockNumber, self.block_number_) {
                 return false;
             }
         }
@@ -125,22 +116,21 @@ impl CuePoint {
 
     pub fn PayloadSize(&self) -> u64 {
         let mut size: u64 =
-            util::EbmlElementSizeArgU64(MkvId::MkvCueClusterPosition as u64, self.cluster_pos_);
-        size += util::EbmlElementSizeArgU64(MkvId::MkvCueTrack as u64, self.track_);
+            util::EbmlElementSizeArgU64(MkvId::MkvCueClusterPosition, self.cluster_pos_);
+        size += util::EbmlElementSizeArgU64(MkvId::MkvCueTrack, self.track_);
         if self.output_block_number_ && self.block_number_ > 1 {
-            size +=
-                util::EbmlElementSizeArgU64(MkvId::MkvCueBlockNumber as u64, self.block_number_);
+            size += util::EbmlElementSizeArgU64(MkvId::MkvCueBlockNumber, self.block_number_);
         }
         let track_pos_size: u64 =
-            util::EbmlMasterElementSize(MkvId::MkvCueTrackPositions as u64, size) + size;
+            util::EbmlMasterElementSize(MkvId::MkvCueTrackPositions, size) + size;
         let payload_size: u64 =
-            util::EbmlElementSizeArgU64(MkvId::MkvCueTime as u64, self.time_) + track_pos_size;
+            util::EbmlElementSizeArgU64(MkvId::MkvCueTime, self.time_) + track_pos_size;
 
         return payload_size;
     }
 
     pub fn Size(&self) -> u64 {
         let payload_size: u64 = self.PayloadSize();
-        util::EbmlElementSizeArgU64(MkvId::MkvCuePoint as u64, payload_size) + payload_size
+        util::EbmlElementSizeArgU64(MkvId::MkvCuePoint, payload_size) + payload_size
     }
 }

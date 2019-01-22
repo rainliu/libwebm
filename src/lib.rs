@@ -5,6 +5,7 @@ extern crate num_traits;
 pub mod mkvmuxer;
 pub mod mkvparser;
 
+#[derive(Debug, Copy, Clone)]
 pub enum MkvId {
     MkvEBML = 0x1A45DFA3,
     MkvEBMLVersion = 0x4286,

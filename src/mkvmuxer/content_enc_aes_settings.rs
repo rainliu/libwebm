@@ -21,27 +21,24 @@ impl ContentEncAESSettings {
     }
 
     pub fn PayloadSize(&self) -> u64 {
-        util::EbmlElementSizeArgU64(MkvId::MkvAESSettingsCipherMode as u64, self.cipher_mode_)
+        util::EbmlElementSizeArgU64(MkvId::MkvAESSettingsCipherMode, self.cipher_mode_)
     }
 
     pub fn Size(&self) -> u64 {
         let payload = self.PayloadSize();
-        util::EbmlMasterElementSize(MkvId::MkvContentEncAESSettings as u64, payload) + payload
+        util::EbmlMasterElementSize(MkvId::MkvContentEncAESSettings, payload) + payload
     }
 
     pub fn Write(&self, writer: &mut dyn Writer) -> bool {
         let payload = self.PayloadSize();
 
-        if !util::WriteEbmlMasterElement(writer, MkvId::MkvContentEncAESSettings as u64, payload) {
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvContentEncAESSettings, payload) {
             return false;
         }
         let payload_position = writer.get_position();
 
-        if !util::WriteEbmlElementArgU64(
-            writer,
-            MkvId::MkvAESSettingsCipherMode as u64,
-            self.cipher_mode_,
-        ) {
+        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvAESSettingsCipherMode, self.cipher_mode_)
+        {
             return false;
         }
 

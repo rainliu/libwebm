@@ -53,7 +53,7 @@ impl Cues {
         for i in 0..self.cue_entries_.len() {
             size += self.cue_entries_[i].Size();
         }
-        size += util::EbmlMasterElementSize(MkvId::MkvCues as u64, size);
+        size += util::EbmlMasterElementSize(MkvId::MkvCues, size);
         size
     }
 
@@ -63,7 +63,7 @@ impl Cues {
             size += self.cue_entries_[i].Size();
         }
 
-        if !util::WriteEbmlMasterElement(writer, MkvId::MkvCues as u64, size) {
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvCues, size) {
             return false;
         }
 

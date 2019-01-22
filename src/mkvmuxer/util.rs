@@ -161,23 +161,23 @@ fn WriteUIntSize(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<(
     SerializeInt(writer, value, size)
 }
 
-fn WriteID(writer: &mut dyn Writer, t: u64) -> io::Result<()> {
+fn WriteID(writer: &mut dyn Writer, t: MkvId) -> io::Result<()> {
     writer.element_start_notify(t, writer.get_position());
 
-    let size = GetUIntSize(t);
+    let size = GetUIntSize(t as u64);
 
-    SerializeInt(writer, t, size)
+    SerializeInt(writer, t as u64, size)
 }
 
-pub fn EbmlMasterElementSize(t: u64, _value: u64) -> u64 {
+pub fn EbmlMasterElementSize(t: MkvId, _value: u64) -> u64 {
     // Size of EBML ID
-    let mut ebml_size: i32 = GetUIntSize(t);
+    let mut ebml_size: i32 = GetUIntSize(t as u64);
     // Datasize
-    ebml_size += GetCodedUIntSize(t);
+    ebml_size += GetCodedUIntSize(t as u64);
     ebml_size as u64
 }
 
-pub fn WriteEbmlMasterElement(writer: &mut dyn Writer, t: u64, size: u64) -> bool {
+pub fn WriteEbmlMasterElement(writer: &mut dyn Writer, t: MkvId, size: u64) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -187,9 +187,9 @@ pub fn WriteEbmlMasterElement(writer: &mut dyn Writer, t: u64, size: u64) -> boo
     true
 }
 
-pub fn EbmlDateElementSize(t: u64) -> u64 {
+pub fn EbmlDateElementSize(t: MkvId) -> u64 {
     // Size of EBML ID
-    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+    let mut ebml_size: u64 = GetUIntSize(t as u64) as u64;
     // Datasize
     ebml_size += DATE_ELEMENT_SIZE as u64;
     // Size of Datasize
@@ -197,7 +197,7 @@ pub fn EbmlDateElementSize(t: u64) -> u64 {
     ebml_size
 }
 
-pub fn WriteEbmlDateElement(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
+pub fn WriteEbmlDateElement(writer: &mut dyn Writer, t: MkvId, value: i64) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -213,9 +213,9 @@ pub fn WriteEbmlDateElement(writer: &mut dyn Writer, t: u64, value: i64) -> bool
     true
 }
 
-pub fn EbmlElementSizeArgI64(t: u64, value: i64) -> u64 {
+pub fn EbmlElementSizeArgI64(t: MkvId, value: i64) -> u64 {
     // Size of EBML ID
-    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+    let mut ebml_size: u64 = GetUIntSize(t as u64) as u64;
     // Datasize
     ebml_size += GetIntSize(value) as u64;
     // Size of Datasize
@@ -223,7 +223,7 @@ pub fn EbmlElementSizeArgI64(t: u64, value: i64) -> u64 {
     ebml_size
 }
 
-pub fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: u64, value: i64) -> bool {
+pub fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: MkvId, value: i64) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -240,17 +240,17 @@ pub fn WriteEbmlElementArgI64(writer: &mut dyn Writer, t: u64, value: i64) -> bo
     true
 }
 
-pub fn EbmlElementSizeArgU64(t: u64, value: u64) -> u64 {
+pub fn EbmlElementSizeArgU64(t: MkvId, value: u64) -> u64 {
     EbmlElementSizeArgsU64(t, value, 0)
 }
 
-pub fn WriteEbmlElementArgU64(writer: &mut dyn Writer, t: u64, value: u64) -> bool {
+pub fn WriteEbmlElementArgU64(writer: &mut dyn Writer, t: MkvId, value: u64) -> bool {
     WriteEbmlElementArgsU64(writer, t, value, 0)
 }
 
-pub fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
+pub fn EbmlElementSizeArgF32(t: MkvId, _value: f32) -> u64 {
     // Size of EBML ID
-    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+    let mut ebml_size: u64 = GetUIntSize(t as u64) as u64;
     // Datasize
     ebml_size += std::mem::size_of::<f32>() as u64;
     // Size of Datasize
@@ -258,7 +258,7 @@ pub fn EbmlElementSizeArgF32(t: u64, _value: f32) -> u64 {
     ebml_size
 }
 
-pub fn WriteEbmlElementArgF32(writer: &mut dyn Writer, t: u64, value: f32) -> bool {
+pub fn WriteEbmlElementArgF32(writer: &mut dyn Writer, t: MkvId, value: f32) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -274,9 +274,9 @@ pub fn WriteEbmlElementArgF32(writer: &mut dyn Writer, t: u64, value: f32) -> bo
     true
 }
 
-pub fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
+pub fn EbmlElementSizeArgsU64(t: MkvId, value: u64, fixed_size: u64) -> u64 {
     // Size of EBML ID
-    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+    let mut ebml_size: u64 = GetUIntSize(t as u64) as u64;
     // Datasize
     ebml_size += if fixed_size > 0 {
         fixed_size
@@ -290,7 +290,7 @@ pub fn EbmlElementSizeArgsU64(t: u64, value: u64, fixed_size: u64) -> u64 {
 
 pub fn WriteEbmlElementArgsU64(
     writer: &mut dyn Writer,
-    t: u64,
+    t: MkvId,
     value: u64,
     fixed_size: u64,
 ) -> bool {
@@ -316,9 +316,9 @@ pub fn WriteEbmlElementArgsU64(
     true
 }
 
-pub fn EbmlElementSizeArgStr(t: u64, value: &str) -> u64 {
+pub fn EbmlElementSizeArgStr(t: MkvId, value: &str) -> u64 {
     // Size of EBML ID
-    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+    let mut ebml_size: u64 = GetUIntSize(t as u64) as u64;
     // Datasize
     ebml_size += value.len() as u64;
     // Size of Datasize
@@ -326,7 +326,7 @@ pub fn EbmlElementSizeArgStr(t: u64, value: &str) -> u64 {
     ebml_size
 }
 
-pub fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> bool {
+pub fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: MkvId, value: &str) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -343,11 +343,11 @@ pub fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> b
     return true;
 }
 
-pub fn EbmlElementSizeArgSlice(t: u64, value: &[u8]) -> u64 {
+pub fn EbmlElementSizeArgSlice(t: MkvId, value: &[u8]) -> u64 {
     let size = value.len() as u64;
 
     // Size of EBML ID
-    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+    let mut ebml_size: u64 = GetUIntSize(t as u64) as u64;
 
     // Datasize
     ebml_size += size;
@@ -356,7 +356,7 @@ pub fn EbmlElementSizeArgSlice(t: u64, value: &[u8]) -> u64 {
     ebml_size
 }
 
-pub fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8]) -> bool {
+pub fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: MkvId, value: &[u8]) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
@@ -375,8 +375,7 @@ pub fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8]) -
 pub fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
     // Subtract one for the void ID and the coded size.
     let void_entry_size: u64 = size - 1 - GetCodedUIntSize(size - 1) as u64;
-    let void_size: u64 =
-        EbmlMasterElementSize(MkvId::MkvVoid as u64, void_entry_size) + void_entry_size;
+    let void_size: u64 = EbmlMasterElementSize(MkvId::MkvVoid, void_entry_size) + void_entry_size;
 
     if void_size != size {
         return 0;
@@ -384,7 +383,7 @@ pub fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
 
     let payload_position = writer.get_position();
 
-    if WriteID(writer, MkvId::MkvVoid as u64).is_err() {
+    if WriteID(writer, MkvId::MkvVoid).is_err() {
         return 0;
     }
 
@@ -407,36 +406,36 @@ pub fn WriteVoidElement(writer: &mut dyn Writer, size: u64) -> u64 {
 
 pub fn WriteEbmlHeader(writer: &mut dyn Writer, doc_type_version: u64, doc_type: &str) -> bool {
     // Level 0
-    let mut size: u64 = EbmlElementSizeArgU64(MkvId::MkvEBMLVersion as u64, 1);
-    size += EbmlElementSizeArgU64(MkvId::MkvEBMLReadVersion as u64, 1);
-    size += EbmlElementSizeArgU64(MkvId::MkvEBMLMaxIDLength as u64, 4);
-    size += EbmlElementSizeArgU64(MkvId::MkvEBMLMaxSizeLength as u64, 8);
-    size += EbmlElementSizeArgStr(MkvId::MkvDocType as u64, doc_type);
-    size += EbmlElementSizeArgU64(MkvId::MkvDocTypeVersion as u64, doc_type_version);
-    size += EbmlElementSizeArgU64(MkvId::MkvDocTypeReadVersion as u64, 2);
+    let mut size: u64 = EbmlElementSizeArgU64(MkvId::MkvEBMLVersion, 1);
+    size += EbmlElementSizeArgU64(MkvId::MkvEBMLReadVersion, 1);
+    size += EbmlElementSizeArgU64(MkvId::MkvEBMLMaxIDLength, 4);
+    size += EbmlElementSizeArgU64(MkvId::MkvEBMLMaxSizeLength, 8);
+    size += EbmlElementSizeArgStr(MkvId::MkvDocType, doc_type);
+    size += EbmlElementSizeArgU64(MkvId::MkvDocTypeVersion, doc_type_version);
+    size += EbmlElementSizeArgU64(MkvId::MkvDocTypeReadVersion, 2);
 
-    if !WriteEbmlMasterElement(writer, MkvId::MkvEBML as u64, size) {
+    if !WriteEbmlMasterElement(writer, MkvId::MkvEBML, size) {
         return false;
     }
-    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLVersion as u64, 1) {
+    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLVersion, 1) {
         return false;
     }
-    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLReadVersion as u64, 1) {
+    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLReadVersion, 1) {
         return false;
     }
-    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLMaxIDLength as u64, 4) {
+    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLMaxIDLength, 4) {
         return false;
     }
-    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLMaxSizeLength as u64, 8) {
+    if !WriteEbmlElementArgU64(writer, MkvId::MkvEBMLMaxSizeLength, 8) {
         return false;
     }
-    if !WriteEbmlElementArgStr(writer, MkvId::MkvDocType as u64, doc_type) {
+    if !WriteEbmlElementArgStr(writer, MkvId::MkvDocType, doc_type) {
         return false;
     }
-    if !WriteEbmlElementArgU64(writer, MkvId::MkvDocTypeVersion as u64, doc_type_version) {
+    if !WriteEbmlElementArgU64(writer, MkvId::MkvDocTypeVersion, doc_type_version) {
         return false;
     }
-    if !WriteEbmlElementArgU64(writer, MkvId::MkvDocTypeReadVersion as u64, 2) {
+    if !WriteEbmlElementArgU64(writer, MkvId::MkvDocTypeReadVersion, 2) {
         return false;
     }
 
