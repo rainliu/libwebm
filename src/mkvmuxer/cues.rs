@@ -1,4 +1,4 @@
-use super::cuepoint::CuePoint;
+use super::cue_point::CuePoint;
 use super::util;
 use super::writer::Writer;
 use crate::common::MkvId;
