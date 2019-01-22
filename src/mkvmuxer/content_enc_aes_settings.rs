@@ -6,7 +6,7 @@ const CTR: u64 = 1;
 
 ///////////////////////////////////////////////////////////////
 // ContentEncAESSettings element
-struct ContentEncAESSettings {
+pub struct ContentEncAESSettings {
     // Sub elements
     cipher_mode_: u64,
 }

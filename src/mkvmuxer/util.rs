@@ -343,30 +343,25 @@ pub fn WriteEbmlElementArgStr(writer: &mut dyn Writer, t: u64, value: &str) -> b
     return true;
 }
 
-pub fn EbmlElementSizeArgSlice(t: u64, value: Option<&[u8]>, size: u64) -> u64 {
-    if let Some(_value) = value {
-        // Size of EBML ID
-        let mut ebml_size: u64 = GetUIntSize(t) as u64;
-        // Datasize
-        ebml_size += size;
-        // Size of Datasize
-        ebml_size += GetCodedUIntSize(size) as u64;
-        ebml_size
-    } else {
-        0
-    }
+pub fn EbmlElementSizeArgSlice(t: u64, value: &[u8]) -> u64 {
+    let size = value.len() as u64;
+
+    // Size of EBML ID
+    let mut ebml_size: u64 = GetUIntSize(t) as u64;
+
+    // Datasize
+    ebml_size += size;
+    // Size of Datasize
+    ebml_size += GetCodedUIntSize(size) as u64;
+    ebml_size
 }
 
-pub fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8], size: u64) -> bool {
-    if size < 1 || value.len() != size as usize {
-        return false;
-    }
-
+pub fn WriteEbmlElementArgSlice(writer: &mut dyn Writer, t: u64, value: &[u8]) -> bool {
     if WriteID(writer, t).is_err() {
         return false;
     }
 
-    if WriteUInt(writer, size).is_err() {
+    if WriteUInt(writer, value.len() as u64).is_err() {
         return false;
     }
 
