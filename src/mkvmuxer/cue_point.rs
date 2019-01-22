@@ -1,6 +1,6 @@
 use super::util;
 use super::writer::Writer;
-use crate::common::MkvId;
+use crate::MkvId;
 
 ///////////////////////////////////////////////////////////////
 // Class to hold one cue point in a Cues element.

@@ -1,7 +1,7 @@
 use super::cue_point::CuePoint;
 use super::util;
 use super::writer::Writer;
-use crate::common::MkvId;
+use crate::MkvId;
 
 ///////////////////////////////////////////////////////////////
 // Cues element.

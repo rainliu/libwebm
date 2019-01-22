@@ -1,7 +1,7 @@
 use super::content_enc_aes_settings::ContentEncAESSettings;
 use super::util;
 use super::writer::Writer;
-use crate::common::MkvId;
+use crate::MkvId;
 
 ///////////////////////////////////////////////////////////////
 // ContentEncoding element

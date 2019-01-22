@@ -1,6 +1,6 @@
 use super::util;
 use super::writer::Writer;
-use crate::common::MkvId;
+use crate::MkvId;
 
 const CTR: u64 = 1;
 
