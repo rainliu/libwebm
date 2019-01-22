@@ -18,7 +18,7 @@ pub struct MkvWriter {
 }
 
 impl MkvWriter {
-    fn new(file: File) -> MkvWriter {
+    pub fn new(file: File) -> MkvWriter {
         MkvWriter {
             file: Box::new(file),
             position: 0,

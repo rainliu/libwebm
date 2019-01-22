@@ -62,14 +62,14 @@ fn GetIntSize(value: i64) -> i32 {
     GetUIntSize(2 * v)
 }
 
-fn GetVersion(major: &mut i32, minor: &mut i32, build: &mut i32, revision: &mut i32) {
+pub fn GetVersion(major: &mut i32, minor: &mut i32, build: &mut i32, revision: &mut i32) {
     *major = 0;
     *minor = 2;
     *build = 1;
     *revision = 0;
 }
 
-fn MakeUID() -> u64 {
+pub fn MakeUID() -> u64 {
     let mut rng = rand::thread_rng();
     let uid: u64 = rng.gen();
     return uid;
