@@ -98,4 +98,67 @@ impl ContentEncoding {
 
         encryption_size + aes_size
     }
+
+    pub fn Write(&self, writer: &mut dyn Writer) -> bool {
+        let encryption_size = self.EncryptionSize();
+        let encoding_size = self.EncodingSize(0, encryption_size);
+        let size = util::EbmlMasterElementSize(MkvId::MkvContentEncoding as u64, encoding_size)
+            + encoding_size;
+
+        let payload_position = writer.get_position();
+
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvContentEncoding as u64, encoding_size) {
+            return false;
+        }
+        if !util::WriteEbmlElementArgU64(
+            writer,
+            MkvId::MkvContentEncodingOrder as u64,
+            self.encoding_order_,
+        ) {
+            return false;
+        }
+        if !util::WriteEbmlElementArgU64(
+            writer,
+            MkvId::MkvContentEncodingScope as u64,
+            self.encoding_scope_,
+        ) {
+            return false;
+        }
+        if !util::WriteEbmlElementArgU64(
+            writer,
+            MkvId::MkvContentEncodingType as u64,
+            self.encoding_type_,
+        ) {
+            return false;
+        }
+
+        if !util::WriteEbmlMasterElement(
+            writer,
+            MkvId::MkvContentEncryption as u64,
+            encryption_size,
+        ) {
+            return false;
+        }
+        if !util::WriteEbmlElementArgU64(writer, MkvId::MkvContentEncAlgo as u64, self.enc_algo_) {
+            return false;
+        }
+        if !util::WriteEbmlElementArgSlice(
+            writer,
+            MkvId::MkvContentEncKeyID as u64,
+            &self.enc_key_id_,
+        ) {
+            return false;
+        }
+
+        if !self.enc_aes_settings_.Write(writer) {
+            return false;
+        }
+
+        let stop_position = writer.get_position();
+        if stop_position - payload_position != size {
+            return false;
+        }
+
+        return true;
+    }
 }
