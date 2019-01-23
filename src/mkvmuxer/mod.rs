@@ -6,6 +6,7 @@ mod cues;
 mod projection;
 mod frame;
 mod tag;
+mod seek_head;
 pub mod util;
 
 pub mod muxer;
