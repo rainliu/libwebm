@@ -5,6 +5,7 @@ mod cue_point;
 mod cues;
 mod projection;
 mod frame;
+mod tag;
 pub mod util;
 
 pub mod muxer;
