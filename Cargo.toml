@@ -10,5 +10,3 @@ description = "libwebm Native in Rust"
 
 [dependencies]
 rand = "0.6.4"
-enum-primitive-derive = "0.1.2"
-num-traits = "0.2.6"
