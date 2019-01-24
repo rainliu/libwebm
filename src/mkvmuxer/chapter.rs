@@ -93,7 +93,7 @@ impl Display {
 }
 
 #[derive(Debug, Clone)]
-struct Chapter {
+pub struct Chapter {
     // The string identifier for this chapter (corresponds to WebVTT cue
     // identifier).
     id_: String,
