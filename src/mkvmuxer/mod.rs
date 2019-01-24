@@ -7,6 +7,7 @@ mod projection;
 mod frame;
 mod tag;
 mod seek_head;
+mod segment_info;
 pub mod util;
 
 pub mod muxer;
