@@ -8,7 +8,7 @@ use std::io::{Error, ErrorKind};
 pub trait Writer {
     fn write(&mut self, buf: &[u8]) -> io::Result<()>;
     fn get_position(&self) -> u64;
-    fn set_position(&mut self, position: u64) -> io::Result<u64>;
+    fn set_position(&mut self, position: u64) -> io::Result<()>;
     fn seekable(&self) -> bool;
     fn element_start_notify(&self, _element_id: MkvId, _position: u64) {}
 }
@@ -45,11 +45,11 @@ impl Writer for MkvWriter {
         self.position
     }
 
-    fn set_position(&mut self, position: u64) -> io::Result<u64> {
+    fn set_position(&mut self, position: u64) -> io::Result<()> {
         let size = self.file.seek(SeekFrom::Start(position))?;
         self.position = size;
         if size == position {
-            Ok(size)
+            Ok(())
         } else {
             Err(Error::new(
                 ErrorKind::Other,
