@@ -1,9 +1,10 @@
 use super::content_encoding::ContentEncoding;
+use super::tracks::kAv1CodecId;
 use super::util;
 use super::writer::Writer;
 use crate::MkvId;
 
-struct Track {
+pub struct Track {
     // Track element names.
     codec_id_: String,
     codec_private_: Vec<u8>,
@@ -165,11 +166,12 @@ impl Track {
 
         // AV1 tracks require a CodecPrivate. See
         // https://github.com/Matroska-Org/matroska-specification/blob/av1-mappin/codec/av1.md
-        // TODO(tomfinegan): Update the above link to the AV1 Matroska mappings to
+        // TODO: Update the above link to the AV1 Matroska mappings to
         // point to a stable version once it is finalized, or our own WebM mappings
         // page on webmproject.org should we decide to release them.
-        //if (!strcmp(codec_id_, Tracks::kAv1CodecId) && !codec_private_)
-        //return false;
+        if self.codec_id_ == kAv1CodecId && !self.codec_private_.is_empty() {
+            return false;
+        }
 
         // |size| may be bigger than what is written out in this function because
         // derived classes may write out more data in the Track element.

@@ -10,6 +10,7 @@ mod seek_head;
 mod segment_info;
 mod cluster;
 mod track;
+mod tracks;
 pub mod util;
 
 pub mod muxer;
