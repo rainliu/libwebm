@@ -10,7 +10,7 @@ use crate::MkvId;
 // Currently only whole frames can be encrypted with AES. This dictates that
 // ContentEncodingOrder will be 0, ContentEncodingScope will be 1,
 // ContentEncodingType will be 1, and ContentEncAlgo will be 5.
-struct ContentEncoding {
+pub struct ContentEncoding {
     // Track element names
     enc_algo_: u64,
     enc_key_id_: Vec<u8>,

@@ -8,6 +8,8 @@ mod frame;
 mod tag;
 mod seek_head;
 mod segment_info;
+mod cluster;
+mod track;
 pub mod util;
 
 pub mod muxer;
