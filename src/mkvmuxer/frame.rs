@@ -45,27 +45,6 @@ pub struct Frame {
     reference_block_timestamp_set_: bool,
 }
 
-/*
-
-// Sets this frame's contents based on |frame|. Returns true on success. On
-// failure, this frame's existing contents may be lost.
-bool CopyFrom(const Frame& frame);
-
-// Copies |frame| data into |frame_|. Returns true on success.
-bool Init(const uint8_t* frame, uint64_t length);
-
-// Copies |additional| data into |additional_|. Returns true on success.
-bool AddAdditionalData(const uint8_t* additional, uint64_t length,
-uint64_t add_id);
-
-// Returns true if the frame has valid parameters.
-bool IsValid() const;
-
-// Returns true if the frame can be written as a SimpleBlock based on current
-// parameters.
-bool CanBeSimpleBlock() const;
-*/
-
 impl Frame {
     pub fn add_id(&self) -> u64 {
         self.add_id_

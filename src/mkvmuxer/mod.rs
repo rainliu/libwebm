@@ -11,6 +11,7 @@ mod segment_info;
 mod cluster;
 mod track;
 mod tracks;
+mod audio_track;
 pub mod util;
 
 pub mod muxer;
