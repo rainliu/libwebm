@@ -1,8 +1,6 @@
 use super::colour::Colour;
-use super::content_encoding::ContentEncoding;
 use super::projection::Projection;
 use super::track::Track;
-use super::tracks::kAv1CodecId;
 use super::util;
 use super::writer::Writer;
 use crate::MkvId;
