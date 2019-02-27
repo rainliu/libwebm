@@ -53,7 +53,7 @@ impl PrimaryChromaticity {
 }
 
 #[derive(Debug, Copy, Clone)]
-struct MasteringMetadata {
+pub struct MasteringMetadata {
     luminance_max_: f32,
     luminance_min_: f32,
     r_: Option<PrimaryChromaticity>,
@@ -427,7 +427,7 @@ impl Primaries {
     }
 }
 
-struct Colour {
+pub struct Colour {
     matrix_coefficients_: u64,
     bits_per_channel_: u64,
     chroma_subsampling_horz_: u64,

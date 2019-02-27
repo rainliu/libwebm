@@ -13,6 +13,7 @@ mod seek_head;
 mod segment_info;
 mod tag;
 mod track;
+mod video_track;
 mod tracks;
 
 pub mod util;

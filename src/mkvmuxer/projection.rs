@@ -3,7 +3,7 @@ use super::writer::Writer;
 use crate::MkvId;
 
 #[derive(Debug, Copy, Clone)]
-enum ProjectionType {
+pub enum ProjectionType {
     kTypeNotPresent = -1,
     kRectangular = 0,
     kEquirectangular = 1,
@@ -11,7 +11,7 @@ enum ProjectionType {
     kMesh = 3,
 }
 
-struct Projection {
+pub struct Projection {
     type_: ProjectionType,
     pose_yaw_: f32,
     pose_pitch_: f32,
