@@ -1,3 +1,7 @@
+use super::util;
+use super::writer::Writer;
+use crate::MkvId;
+
 const MAX_TRACK_NUMBER: u64 = 126;
 
 // Class to hold data the will be written to a block.
@@ -8,9 +12,6 @@ pub struct Frame {
 
     // Pointer to additional data. Owned by this class.
     additional_: Vec<u8>,
-
-    // Length of the additional data.
-    additional_length_: u64,
 
     // Duration of the frame in nanoseconds.
     duration_: u64,
@@ -25,9 +26,6 @@ pub struct Frame {
 
     // Flag telling if the data should set the key flag of a block.
     is_key_: bool,
-
-    // Length of the data.
-    length_: u64,
 
     // Mkv track number the data is associated with.
     track_number_: u64,
@@ -53,7 +51,7 @@ impl Frame {
         &self.additional_
     }
     pub fn additional_length(&self) -> u64 {
-        self.additional_length_
+        self.additional_.len() as u64
     }
     pub fn set_duration(&mut self, duration: u64) {
         self.duration_ = duration;
@@ -75,7 +73,7 @@ impl Frame {
         self.is_key_
     }
     pub fn length(&self) -> u64 {
-        self.length_
+        self.frame_.len() as u64
     }
     pub fn set_track_number(&mut self, track_number: u64) {
         self.track_number_ = track_number;
@@ -110,12 +108,10 @@ impl Frame {
         Frame {
             add_id_: 0,
             additional_: Vec::new(),
-            additional_length_: 0,
             duration_: 0,
             duration_set_: false,
             frame_: Vec::new(),
             is_key_: false,
-            length_: 0,
             track_number_: 0,
             timestamp_: 0,
             discard_padding_: 0,
@@ -126,22 +122,20 @@ impl Frame {
 
     pub fn Init(&mut self, frame: &[u8], length: u64) -> bool {
         self.frame_ = frame.to_vec();
-        self.length_ = length;
         true
     }
 
-    pub fn AddAdditionalData(&mut self, additional: &[u8], length: u64, add_id: u64) -> bool {
+    pub fn AddAdditionalData(&mut self, additional: &[u8], add_id: u64) -> bool {
         self.additional_ = additional.to_vec();
-        self.additional_length_ = length;
         self.add_id_ = add_id;
         true
     }
 
     pub fn IsValid(&self) -> bool {
-        if self.length_ == 0 {
+        if self.frame_.is_empty() {
             return false;
         }
-        if self.additional_length_ != 0 {
+        if !self.additional_.is_empty() {
             return false;
         }
         if self.track_number_ == 0 || self.track_number_ > MAX_TRACK_NUMBER {
@@ -155,5 +149,46 @@ impl Frame {
 
     pub fn CanBeSimpleBlock(&self) -> bool {
         self.additional_.len() == 0 && self.discard_padding_ == 0 && self.duration_ == 0
+    }
+
+    pub fn WriteSimpleBlock(&self, writer: &mut dyn Writer, timecode: i64) -> u64 {
+        if let Err(e) = util::WriteID(writer, MkvId::MkvSimpleBlock) {
+            return 0;
+        }
+
+        let size = self.length() + 4;
+        if let Err(e) = util::WriteUInt(writer, size) {
+            return 0;
+        }
+
+        if let Err(e) = util::WriteUInt(writer, self.track_number()) {
+            return 0;
+        }
+
+        if let Err(e) = util::SerializeInt(writer, timecode as u64, 2) {
+            return 0;
+        }
+
+        let mut flags = 0;
+        if self.is_key() {
+            flags |= 0x80;
+        }
+
+        if let Err(e) = util::SerializeInt(writer, flags, 1) {
+            return 0;
+        }
+
+        if let Err(e) = writer.write(self.frame()) {
+            return 0;
+        }
+
+        return util::GetUIntSize(MkvId::MkvSimpleBlock as u64) as u64
+            + util::GetCodedUIntSize(size) as u64
+            + 4
+            + self.length();
+    }
+
+    pub fn WriteBlock(&self, writer: &mut dyn Writer, timecode: i64, timecode_scale: u64) -> u64 {
+        0
     }
 }

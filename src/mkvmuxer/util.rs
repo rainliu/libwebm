@@ -4,8 +4,8 @@ use rand::Rng;
 use std::io;
 use std::io::{Error, ErrorKind};
 
-const EBML_UNKNOWN_VALUE: u64 = 0x01FFFFFFFFFFFFFF;
-const MAX_BLOCK_TIMECODE: i64 = 0x07FFF;
+pub const EBML_UNKNOWN_VALUE: u64 = 0x01FFFFFFFFFFFFFF;
+pub const MAX_BLOCK_TIMECODE: i64 = 0x07FFF;
 
 // Date elements are always 8 octets in size.
 const DATE_ELEMENT_SIZE: i32 = 8;
@@ -13,7 +13,7 @@ const DATE_ELEMENT_SIZE: i32 = 8;
 const DOC_TYPE_WEBM: &'static str = "webm";
 const DOC_TYPE_MATROSKA: &'static str = "matroska";
 
-fn GetCodedUIntSize(value: u64) -> i32 {
+pub fn GetCodedUIntSize(value: u64) -> i32 {
     if value < 0x000000000000007F {
         return 1;
     } else if value < 0x0000000000003FFF {
@@ -32,7 +32,7 @@ fn GetCodedUIntSize(value: u64) -> i32 {
     8
 }
 
-fn GetUIntSize(value: u64) -> i32 {
+pub fn GetUIntSize(value: u64) -> i32 {
     if value < 0x0000000000000100 {
         return 1;
     } else if value < 0x0000000000010000 {
@@ -51,7 +51,7 @@ fn GetUIntSize(value: u64) -> i32 {
     8
 }
 
-fn GetIntSize(value: i64) -> i32 {
+pub fn GetIntSize(value: i64) -> i32 {
     // Doubling the requested value ensures positive values with their high bit
     // set are written with 0-padding to avoid flipping the signedness.
     let v: u64 = if value < 0 {
@@ -75,7 +75,7 @@ pub fn MakeUID() -> u64 {
     return uid;
 }
 
-fn SerializeInt(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<()> {
+pub fn SerializeInt(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<()> {
     if size < 1 || size > 8 {
         Err(Error::new(ErrorKind::Other, "size should be in [1,8]"))
     } else {
@@ -91,7 +91,7 @@ fn SerializeInt(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<()
     }
 }
 
-fn SerializeFloat(writer: &mut dyn Writer, f: f32) -> io::Result<()> {
+pub fn SerializeFloat(writer: &mut dyn Writer, f: f32) -> io::Result<()> {
     assert!(std::mem::size_of::<u32>() == std::mem::size_of::<f32>());
     // This union is merely used to avoid a reinterpret_cast from float& to
     // uint32& which will result in violation of strict aliasing.
@@ -115,13 +115,13 @@ fn SerializeFloat(writer: &mut dyn Writer, f: f32) -> io::Result<()> {
     writer.write(&buffer)
 }
 
-fn WriteUInt(writer: &mut dyn Writer, value: u64) -> io::Result<()> {
+pub fn WriteUInt(writer: &mut dyn Writer, value: u64) -> io::Result<()> {
     let size = GetCodedUIntSize(value);
 
     WriteUIntSize(writer, value, size)
 }
 
-fn WriteUIntSize(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<()> {
+pub fn WriteUIntSize(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<()> {
     if size < 0 || size > 8 {
         return Err(Error::new(ErrorKind::Other, "size should be in [0,8]"));
     }
@@ -161,7 +161,7 @@ fn WriteUIntSize(writer: &mut dyn Writer, value: u64, size: i32) -> io::Result<(
     SerializeInt(writer, value, size)
 }
 
-fn WriteID(writer: &mut dyn Writer, t: MkvId) -> io::Result<()> {
+pub fn WriteID(writer: &mut dyn Writer, t: MkvId) -> io::Result<()> {
     writer.element_start_notify(t, writer.get_position());
 
     let size = GetUIntSize(t as u64);
