@@ -189,6 +189,132 @@ impl Frame {
     }
 
     pub fn WriteBlock(&self, writer: &mut dyn Writer, timecode: i64, timecode_scale: u64) -> u64 {
-        0
+        let mut block_additional_elem_size = 0;
+        let mut block_addid_elem_size = 0;
+        let mut block_more_payload_size = 0;
+        let mut block_more_elem_size = 0;
+        let mut block_additions_payload_size = 0;
+        let mut block_additions_elem_size = 0;
+        if !self.additional().is_empty() {
+            block_additional_elem_size =
+                util::EbmlElementSizeArgSlice(MkvId::MkvBlockAdditional, self.additional());
+            block_addid_elem_size =
+                util::EbmlElementSizeArgU64(MkvId::MkvBlockAddID, self.add_id());
+
+            block_more_payload_size = block_addid_elem_size + block_additional_elem_size;
+            block_more_elem_size =
+                util::EbmlMasterElementSize(MkvId::MkvBlockMore, block_more_payload_size)
+                    + block_more_payload_size;
+            block_additions_payload_size = block_more_elem_size;
+            block_additions_elem_size =
+                util::EbmlMasterElementSize(MkvId::MkvBlockAdditions, block_additions_payload_size)
+                    + block_additions_payload_size;
+        }
+
+        let mut discard_padding_elem_size = 0;
+        if self.discard_padding() != 0 {
+            discard_padding_elem_size =
+                util::EbmlElementSizeArgI64(MkvId::MkvDiscardPadding, self.discard_padding());
+        }
+
+        let reference_block_timestamp = self.reference_block_timestamp() as u64 / timecode_scale;
+        let mut reference_block_elem_size = 0;
+        if !self.is_key() {
+            reference_block_elem_size =
+                util::EbmlElementSizeArgU64(MkvId::MkvReferenceBlock, reference_block_timestamp);
+        }
+
+        let duration = self.duration() / timecode_scale;
+        let mut block_duration_elem_size = 0;
+        if duration > 0 {
+            block_duration_elem_size =
+                util::EbmlElementSizeArgU64(MkvId::MkvBlockDuration, duration);
+        }
+
+        let block_payload_size = 4 + self.length();
+        let block_elem_size =
+            util::EbmlMasterElementSize(MkvId::MkvBlock, block_payload_size) + block_payload_size;
+
+        let block_group_payload_size = block_elem_size
+            + block_additions_elem_size
+            + block_duration_elem_size
+            + discard_padding_elem_size
+            + reference_block_elem_size;
+
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvBlockGroup, block_group_payload_size) {
+            return 0;
+        }
+
+        if !util::WriteEbmlMasterElement(writer, MkvId::MkvBlock, block_payload_size) {
+            return 0;
+        }
+
+        if let Err(e) = util::WriteUInt(writer, self.track_number()) {
+            return 0;
+        }
+
+        if let Err(e) = util::SerializeInt(writer, timecode as u64, 2) {
+            return 0;
+        }
+
+        // For a Block, flags is always 0.
+        if let Err(e) = util::SerializeInt(writer, 0, 1) {
+            return 0;
+        }
+
+        if let Err(e) = writer.write(self.frame()) {
+            return 0;
+        }
+
+        if !self.additional().is_empty() {
+            if !util::WriteEbmlMasterElement(
+                writer,
+                MkvId::MkvBlockAdditions,
+                block_additions_payload_size,
+            ) {
+                return 0;
+            }
+
+            if !util::WriteEbmlMasterElement(writer, MkvId::MkvBlockMore, block_more_payload_size) {
+                return 0;
+            }
+
+            if !util::WriteEbmlElementArgU64(writer, MkvId::MkvBlockAddID, self.add_id()) {
+                return 0;
+            }
+
+            if !util::WriteEbmlElementArgSlice(writer, MkvId::MkvBlockAdditional, self.additional())
+            {
+                return 0;
+            }
+        }
+
+        if self.discard_padding() != 0
+            && !util::WriteEbmlElementArgI64(
+                writer,
+                MkvId::MkvDiscardPadding,
+                self.discard_padding(),
+            )
+        {
+            return 0;
+        }
+
+        if !self.is_key()
+            && !util::WriteEbmlElementArgU64(
+                writer,
+                MkvId::MkvReferenceBlock,
+                reference_block_timestamp,
+            )
+        {
+            return 0;
+        }
+
+        if duration > 0 && !util::WriteEbmlElementArgU64(writer, MkvId::MkvBlockDuration, duration)
+        {
+            return 0;
+        }
+
+        util::EbmlMasterElementSize(MkvId::MkvBlockGroup, block_group_payload_size)
+            + block_group_payload_size
     }
 }
