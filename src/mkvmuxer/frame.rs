@@ -120,7 +120,7 @@ impl Frame {
         }
     }
 
-    pub fn Init(&mut self, frame: &[u8], length: u64) -> bool {
+    pub fn Init(&mut self, frame: &[u8]) -> bool {
         self.frame_ = frame.to_vec();
         true
     }

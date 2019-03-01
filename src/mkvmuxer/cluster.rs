@@ -26,7 +26,7 @@ struct Cluster<'a> {
     position_for_cues_: i64,
 
     // The file position of the cluster's size element.
-    size_position_: u64,
+    size_position_: i64,
 
     // The absolute timecode of the cluster.
     timecode_: u64,
@@ -67,7 +67,7 @@ impl<'a> Cluster<'a> {
             header_written_: false,
             payload_size_: 0,
             position_for_cues_: cues_pos,
-            size_position_: 0,
+            size_position_: -1,
             timecode_: timecode,
             timecode_scale_: timecode_scale,
             write_last_frame_with_duration_: write_last_frame_with_duration,
@@ -76,7 +76,7 @@ impl<'a> Cluster<'a> {
             writer_: writer,
         }
     }
-    pub fn size_position(&self) -> u64 {
+    pub fn size_position(&self) -> i64 {
         return self.size_position_;
     }
     pub fn blocks_added(&self) -> i32 {
@@ -135,7 +135,7 @@ impl<'a> Cluster<'a> {
         }
 
         // Save for later.
-        self.size_position_ = self.writer_.get_position();
+        self.size_position_ = self.writer_.get_position() as i64;
 
         // Write "unknown" (EBML coded -1) as cluster size value. We need to write 8
         // bytes because we do not know how big our cluster will be.
@@ -212,76 +212,223 @@ impl<'a> Cluster<'a> {
         }
 
         self.PostWriteBlock(element_size);
-        self.last_block_timestamp_.insert(frame.track_number(), frame.timestamp());
+        self.last_block_timestamp_
+            .insert(frame.track_number(), frame.timestamp());
         true
     }
-    /*
-        fn QueueOrWriteFrame(&mut self, frame:&Frame) ->bool {
-            if !frame.IsValid() {
-                return false;
-            }
 
-            // If |write_last_frame_with_duration_| is not set, then write the frame right
-            // away.
-            if !self.write_last_frame_with_duration_ {
-                return self.DoWriteFrame(frame);
-            }
+    fn QueueOrWriteFrame(&mut self, frame: &Frame) -> bool {
+        if !frame.IsValid() {
+            return false;
+        }
 
-            // Queue the current frame.
-            let track_number = frame.track_number();
-            let frame_to_store = frame.clone();
-            self.stored_frames_[track_number].push(frame_to_store);
+        // If |write_last_frame_with_duration_| is not set, then write the frame right
+        // away.
+        if !self.write_last_frame_with_duration_ {
+            return self.DoWriteFrame(frame);
+        }
 
-            // Iterate through all queued frames in the current track except the last one
-            // and write it if it is okay to do so (i.e.) no other track has an held back
-            // frame with timestamp <= the timestamp of the frame in question.
-            std::vector<std::list<Frame*>::iterator> frames_to_erase;
-            for (std::list<Frame*>::iterator
-            current_track_iterator = stored_frames_[track_number].begin(),
-            end = --stored_frames_[track_number].end();
-            current_track_iterator != end; ++current_track_iterator) {
+        // Queue the current frame.
+        let track_number = frame.track_number();
+        let frame_to_store = frame.clone();
+        if let Some(x) = self.stored_frames_.get_mut(&track_number) {
+            x.push(frame_to_store);
+        }
+
+        // Iterate through all queued frames in the current track except the last one
+        // and write it if it is okay to do so (i.e.) no other track has an held back
+        // frame with timestamp <= the timestamp of the frame in question.
+        /*
+          std::vector<std::list<Frame*>::iterator> frames_to_erase;
+          for (std::list<Frame*>::iterator
+                   current_track_iterator = stored_frames_[track_number].begin(),
+                   end = --stored_frames_[track_number].end();
+               current_track_iterator != end; ++current_track_iterator) {
             const Frame* const frame_to_write = *current_track_iterator;
             bool okay_to_write = true;
             for (FrameMapIterator track_iterator = stored_frames_.begin();
-            track_iterator != stored_frames_.end(); ++track_iterator) {
-            if (track_iterator->first == track_number) {
-            continue;
-            }
-            if (track_iterator->second.front()->timestamp() <
-            frame_to_write->timestamp()) {
-            okay_to_write = false;
-            break;
-            }
+                 track_iterator != stored_frames_.end(); ++track_iterator) {
+              if (track_iterator->first == track_number) {
+                continue;
+              }
+              if (track_iterator->second.front()->timestamp() <
+                  frame_to_write->timestamp()) {
+                okay_to_write = false;
+                break;
+              }
             }
             if (okay_to_write) {
-            const bool wrote_frame = DoWriteFrame(frame_to_write);
-            delete frame_to_write;
-            if (!wrote_frame)
-            return false;
-            frames_to_erase.push_back(current_track_iterator);
+              const bool wrote_frame = DoWriteFrame(frame_to_write);
+              delete frame_to_write;
+              if (!wrote_frame)
+                return false;
+              frames_to_erase.push_back(current_track_iterator);
             } else {
-            break;
+              break;
             }
-            }
-            for (std::vector<std::list<Frame*>::iterator>::iterator iterator =
-            frames_to_erase.begin();
-            iterator != frames_to_erase.end(); ++iterator) {
+          }
+          for (std::vector<std::list<Frame*>::iterator>::iterator iterator =
+                   frames_to_erase.begin();
+               iterator != frames_to_erase.end(); ++iterator) {
             stored_frames_[track_number].erase(*iterator);
-            }
-            return true;
-        }
-    */
-    /*
-    pub fn AddFrame(data: &[u8],
-         track_number:u64,  abs_timecode:u64,
-         is_key:bool) ->bool {
+          }
+        */
+        return true;
+    }
+
+    pub fn AddNewFrame(
+        &mut self,
+        data: &[u8],
+        track_number: u64,
+        abs_timecode: u64,
+        is_key: bool,
+    ) -> bool {
         let mut frame = Frame::new();
-        if !frame.Init(data, length) {
+        if !frame.Init(data) {
             return false;
         }
         frame.set_track_number(track_number);
         frame.set_timestamp(abs_timecode);
         frame.set_is_key(is_key);
-        return QueueOrWriteFrame(&frame);
-    }*/
+        return self.QueueOrWriteFrame(&frame);
+    }
+
+    pub fn AddFrame(&mut self, frame: &Frame) -> bool {
+        return self.QueueOrWriteFrame(frame);
+    }
+
+    pub fn AddFrameWithAdditional(
+        &mut self,
+        data: &[u8],
+        additional: &[u8],
+        add_id: u64,
+        track_number: u64,
+        abs_timecode: u64,
+        is_key: bool,
+    ) -> bool {
+        if additional.is_empty() {
+            return false;
+        }
+        let mut frame = Frame::new();
+        if !frame.Init(data) || !frame.AddAdditionalData(additional, add_id) {
+            return false;
+        }
+        frame.set_track_number(track_number);
+        frame.set_timestamp(abs_timecode);
+        frame.set_is_key(is_key);
+        return self.QueueOrWriteFrame(&frame);
+    }
+
+    pub fn AddFrameWithDiscardPadding(
+        &mut self,
+        data: &[u8],
+        discard_padding: i64,
+        track_number: u64,
+        abs_timecode: u64,
+        is_key: bool,
+    ) -> bool {
+        let mut frame = Frame::new();
+        if !frame.Init(data) {
+            return false;
+        }
+        frame.set_discard_padding(discard_padding);
+        frame.set_track_number(track_number);
+        frame.set_timestamp(abs_timecode);
+        frame.set_is_key(is_key);
+        return self.QueueOrWriteFrame(&frame);
+    }
+
+    pub fn AddMetadata(
+        &mut self,
+        data: &[u8],
+        track_number: u64,
+        abs_timecode: u64,
+        duration_timecode: u64,
+    ) -> bool {
+        let mut frame = Frame::new();
+        if !frame.Init(data) {
+            return false;
+        }
+        frame.set_track_number(track_number);
+        frame.set_timestamp(abs_timecode);
+        frame.set_duration(duration_timecode);
+        frame.set_is_key(true); // All metadata blocks are keyframes.
+        return self.QueueOrWriteFrame(&frame);
+    }
+
+    pub fn finalize(&mut self, set_last_frame_duration:bool, duration: u64)->bool {
+        if self. finalized_ {
+            return false;
+        }
+
+        if self.write_last_frame_with_duration_ {
+            // Write out held back Frames. This essentially performs a k-way merge
+            // across all tracks in the increasing order of timestamps.
+            while !self.stored_frames_.is_empty() {
+                /*
+                Frame* frame = stored_frames_.begin()->second.front();
+
+                // Get the next frame to write (frame with least timestamp across all
+                // tracks).
+                for (FrameMapIterator frames_iterator = ++stored_frames_.begin();
+                frames_iterator != stored_frames_.end(); ++frames_iterator) {
+                    if (frames_iterator->second.front()->timestamp() < frame->timestamp()) {
+                        frame = frames_iterator->second.front();
+                    }
+                }
+
+                // Set the duration if it's the last frame for the track.
+                if (set_last_frame_duration &&
+                    stored_frames_[frame->track_number()].size() == 1 &&
+                    !frame->duration_set()) {
+                    frame->set_duration(duration - frame->timestamp());
+                    if (!frame->is_key() && !frame->reference_block_timestamp_set()) {
+                        frame->set_reference_block_timestamp(
+                            last_block_timestamp_[frame->track_number()]);
+                    }
+                }
+
+                // Write the frame and remove it from |stored_frames_|.
+                const bool wrote_frame = DoWriteFrame(frame);
+                stored_frames_[frame->track_number()].pop_front();
+                if (stored_frames_[frame->track_number()].empty()) {
+                    stored_frames_.erase(frame->track_number());
+                }
+                delete frame;
+                if (!wrote_frame)
+                return false;
+                */
+            }
+        }
+
+        if self.size_position_ == -1 {
+            return false;
+        }
+
+        if self.writer_.seekable() {
+            let pos = self.writer_.get_position();
+
+            if let Err(e) =self.writer_.set_position(self.size_position_ as u64) {
+                return false;
+            }
+
+            let payload_size = self.payload_size();
+            if let Err(e) =util::WriteUIntSize(self.writer_, payload_size, 8) {
+                return false;
+            }
+
+            if let Err(e) = self.writer_.set_position(pos) {
+                return false;
+            }
+        }
+
+        self.finalized_ = true;
+
+        return true;
+    }
+
+    pub fn Finalize(&mut self) -> bool {
+         !self.write_last_frame_with_duration_ && self.finalize(false, 0)
+    }
+
 }
