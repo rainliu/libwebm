@@ -5,7 +5,7 @@ use crate::MkvId;
 const MAX_TRACK_NUMBER: u64 = 126;
 
 // Class to hold data the will be written to a block.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Frame {
     // Id of the Additional data.
     add_id_: u64,
@@ -41,6 +41,19 @@ pub struct Frame {
 
     // Flag indicating if |reference_block_timestamp_| has been set.
     reference_block_timestamp_set_: bool,
+}
+
+use std::cmp::Ordering;
+impl Ord for Frame {
+    fn cmp(&self, other: &Frame) -> Ordering {
+        self.timestamp_.cmp(&other.timestamp_)
+    }
+}
+
+impl PartialOrd for Frame {
+    fn partial_cmp(&self, other: &Frame) -> Option<Ordering> {
+        Some(self.timestamp_.cmp(&other.timestamp_))
+    }
 }
 
 impl Frame {
