@@ -4,6 +4,8 @@ use super::writer::Writer;
 use crate::MkvId;
 
 use std::collections::HashMap;
+use std::collections::BinaryHeap;
+use std::cmp::Reverse;
 
 struct Cluster<'a> {
     // Number of blocks added to the cluster.
@@ -364,40 +366,37 @@ impl<'a> Cluster<'a> {
         if self.write_last_frame_with_duration_ {
             // Write out held back Frames. This essentially performs a k-way merge
             // across all tracks in the increasing order of timestamps.
-            while !self.stored_frames_.is_empty() {
-                /*
-                Frame* frame = stored_frames_.begin()->second.front();
-
-                // Get the next frame to write (frame with least timestamp across all
-                // tracks).
-                for (FrameMapIterator frames_iterator = ++stored_frames_.begin();
-                frames_iterator != stored_frames_.end(); ++frames_iterator) {
-                    if (frames_iterator->second.front()->timestamp() < frame->timestamp()) {
-                        frame = frames_iterator->second.front();
-                    }
+            let mut min_heap = BinaryHeap::new();
+            for (_, frames) in self.stored_frames_.iter_mut() {
+                if !frames.is_empty() {
+                    min_heap.push(Reverse(frames.remove(0)));
                 }
+            }
+            while !min_heap.is_empty(){
+                let mut frame = min_heap.pop().unwrap().0;
 
                 // Set the duration if it's the last frame for the track.
-                if (set_last_frame_duration &&
-                    stored_frames_[frame->track_number()].size() == 1 &&
-                    !frame->duration_set()) {
-                    frame->set_duration(duration - frame->timestamp());
-                    if (!frame->is_key() && !frame->reference_block_timestamp_set()) {
-                        frame->set_reference_block_timestamp(
-                            last_block_timestamp_[frame->track_number()]);
+                if set_last_frame_duration &&
+                    self.stored_frames_[&frame.track_number()].is_empty() &&
+                    !frame.duration_set() {
+                    frame.set_duration(duration - frame.timestamp());
+                    if !frame.is_key() && !frame.reference_block_timestamp_set() {
+                        frame.set_reference_block_timestamp(
+                            self.last_block_timestamp_[&frame.track_number()] as i64);
                     }
                 }
 
                 // Write the frame and remove it from |stored_frames_|.
-                const bool wrote_frame = DoWriteFrame(frame);
-                stored_frames_[frame->track_number()].pop_front();
-                if (stored_frames_[frame->track_number()].empty()) {
-                    stored_frames_.erase(frame->track_number());
+                let wrote_frame = self.DoWriteFrame(&frame);
+                if let Some(frames) = self.stored_frames_.get_mut(&frame.track_number()){
+                    if !frames.is_empty() {
+                        min_heap.push(Reverse(frames.remove(0)));
+                    }
                 }
-                delete frame;
-                if (!wrote_frame)
-                return false;
-                */
+
+                if !wrote_frame {
+                    return false;
+                }
             }
         }
 
