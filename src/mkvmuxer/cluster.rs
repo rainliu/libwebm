@@ -3,9 +3,9 @@ use super::util;
 use super::writer::Writer;
 use crate::MkvId;
 
-use std::collections::HashMap;
-use std::collections::BinaryHeap;
 use std::cmp::Reverse;
+use std::collections::BinaryHeap;
+use std::collections::HashMap;
 
 struct Cluster<'a> {
     // Number of blocks added to the cluster.
@@ -233,48 +233,37 @@ impl<'a> Cluster<'a> {
         // Queue the current frame.
         let track_number = frame.track_number();
         let frame_to_store = frame.clone();
-        if let Some(x) = self.stored_frames_.get_mut(&track_number) {
-            x.push(frame_to_store);
-        }
 
         // Iterate through all queued frames in the current track except the last one
         // and write it if it is okay to do so (i.e.) no other track has an held back
         // frame with timestamp <= the timestamp of the frame in question.
-        /*
-          std::vector<std::list<Frame*>::iterator> frames_to_erase;
-          for (std::list<Frame*>::iterator
-                   current_track_iterator = stored_frames_[track_number].begin(),
-                   end = --stored_frames_[track_number].end();
-               current_track_iterator != end; ++current_track_iterator) {
-            const Frame* const frame_to_write = *current_track_iterator;
-            bool okay_to_write = true;
-            for (FrameMapIterator track_iterator = stored_frames_.begin();
-                 track_iterator != stored_frames_.end(); ++track_iterator) {
-              if (track_iterator->first == track_number) {
-                continue;
-              }
-              if (track_iterator->second.front()->timestamp() <
-                  frame_to_write->timestamp()) {
-                okay_to_write = false;
-                break;
-              }
-            }
-            if (okay_to_write) {
-              const bool wrote_frame = DoWriteFrame(frame_to_write);
-              delete frame_to_write;
-              if (!wrote_frame)
-                return false;
-              frames_to_erase.push_back(current_track_iterator);
-            } else {
-              break;
-            }
-          }
-          for (std::vector<std::list<Frame*>::iterator>::iterator iterator =
-                   frames_to_erase.begin();
-               iterator != frames_to_erase.end(); ++iterator) {
-            stored_frames_[track_number].erase(*iterator);
-          }
-        */
+        if let Some(mut frames) = self.stored_frames_.remove(&track_number) {
+            frames.retain(|frame_to_write| {
+                let mut okay_to_write = true;
+                for (key, val) in self.stored_frames_.iter() {
+                    if *key == track_number {
+                        continue;
+                    } else if let Some(frame) = val.first() {
+                        if frame.timestamp() < frame_to_write.timestamp() {
+                            okay_to_write = false;
+                            break;
+                        }
+                    }
+                }
+                if okay_to_write {
+                    !self.DoWriteFrame(frame_to_write)
+                } else {
+                    false
+                }
+            });
+
+            frames.push(frame_to_store);
+            self.stored_frames_.insert(track_number, frames);
+        } else {
+            self.stored_frames_
+                .insert(track_number, vec![frame_to_store]);
+        }
+
         return true;
     }
 
@@ -358,8 +347,8 @@ impl<'a> Cluster<'a> {
         return self.QueueOrWriteFrame(&frame);
     }
 
-    pub fn finalize(&mut self, set_last_frame_duration:bool, duration: u64)->bool {
-        if self. finalized_ {
+    pub fn finalize(&mut self, set_last_frame_duration: bool, duration: u64) -> bool {
+        if self.finalized_ {
             return false;
         }
 
@@ -372,23 +361,25 @@ impl<'a> Cluster<'a> {
                     min_heap.push(Reverse(frames.remove(0)));
                 }
             }
-            while !min_heap.is_empty(){
+            while !min_heap.is_empty() {
                 let mut frame = min_heap.pop().unwrap().0;
 
                 // Set the duration if it's the last frame for the track.
-                if set_last_frame_duration &&
-                    self.stored_frames_[&frame.track_number()].is_empty() &&
-                    !frame.duration_set() {
+                if set_last_frame_duration
+                    && self.stored_frames_[&frame.track_number()].is_empty()
+                    && !frame.duration_set()
+                {
                     frame.set_duration(duration - frame.timestamp());
                     if !frame.is_key() && !frame.reference_block_timestamp_set() {
                         frame.set_reference_block_timestamp(
-                            self.last_block_timestamp_[&frame.track_number()] as i64);
+                            self.last_block_timestamp_[&frame.track_number()] as i64,
+                        );
                     }
                 }
 
                 // Write the frame and remove it from |stored_frames_|.
                 let wrote_frame = self.DoWriteFrame(&frame);
-                if let Some(frames) = self.stored_frames_.get_mut(&frame.track_number()){
+                if let Some(frames) = self.stored_frames_.get_mut(&frame.track_number()) {
                     if !frames.is_empty() {
                         min_heap.push(Reverse(frames.remove(0)));
                     }
@@ -407,12 +398,12 @@ impl<'a> Cluster<'a> {
         if self.writer_.seekable() {
             let pos = self.writer_.get_position();
 
-            if let Err(e) =self.writer_.set_position(self.size_position_ as u64) {
+            if let Err(e) = self.writer_.set_position(self.size_position_ as u64) {
                 return false;
             }
 
             let payload_size = self.payload_size();
-            if let Err(e) =util::WriteUIntSize(self.writer_, payload_size, 8) {
+            if let Err(e) = util::WriteUIntSize(self.writer_, payload_size, 8) {
                 return false;
             }
 
@@ -427,7 +418,6 @@ impl<'a> Cluster<'a> {
     }
 
     pub fn Finalize(&mut self) -> bool {
-         !self.write_last_frame_with_duration_ && self.finalize(false, 0)
+        !self.write_last_frame_with_duration_ && self.finalize(false, 0)
     }
-
 }
