@@ -10,6 +10,7 @@ mod cues;
 mod frame;
 mod projection;
 mod seek_head;
+mod segment;
 mod segment_info;
 mod tag;
 mod track;

@@ -6,7 +6,7 @@ use crate::MkvId;
 ///////////////////////////////////////////////////////////////
 // Cues element.
 #[derive(Debug, Clone)]
-struct Cues {
+pub struct Cues {
     // CuePoint list.
     cue_entries_: Vec<CuePoint>,
 
@@ -40,12 +40,12 @@ impl Cues {
         true
     }
 
-    pub fn GetCueByIndex(&self, index: usize) -> Option<&CuePoint> {
+    pub fn GetCueByIndex(&mut self, index: usize) -> Option<&mut CuePoint> {
         if index >= self.cue_entries_.len() {
             return None;
         }
 
-        Some(&self.cue_entries_[index])
+        Some(&mut self.cue_entries_[index])
     }
 
     pub fn Size(&self) -> u64 {

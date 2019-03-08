@@ -2,7 +2,7 @@ use super::util;
 use super::writer::Writer;
 use crate::MkvId;
 
-struct SegmentInfo {
+pub struct SegmentInfo {
     // Segment Information element names.
     // Initially set to -1 to signify that a duration has not been set and should
     // not be written out.

@@ -4,7 +4,7 @@ use crate::MkvId;
 
 const kSeekEntryCount: usize = 5;
 
-struct SeekHead {
+pub struct SeekHead {
     seek_entry_id_: Vec<u32>,
 
     // Seek entry pos element list.

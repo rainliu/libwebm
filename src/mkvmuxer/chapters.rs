@@ -3,7 +3,7 @@ use super::util;
 use super::writer::Writer;
 use crate::MkvId;
 
-struct Chapters {
+pub struct Chapters {
     // Array for storage of chapter objects.
     chapters_: Vec<Chapter>,
 }

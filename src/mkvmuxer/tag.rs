@@ -3,7 +3,7 @@ use super::writer::Writer;
 use crate::MkvId;
 
 #[derive(Debug, Clone)]
-struct SimpleTag {
+pub struct SimpleTag {
     tag_name_: String,
     tag_string_: String,
 }
@@ -60,7 +60,7 @@ impl SimpleTag {
     }
 }
 
-struct Tag {
+pub struct Tag {
     simple_tags_: Vec<SimpleTag>,
 }
 
@@ -120,7 +120,7 @@ impl Clone for Tag {
     }
 }
 
-struct Tags {
+pub struct Tags {
     tags_: Vec<Tag>,
 }
 

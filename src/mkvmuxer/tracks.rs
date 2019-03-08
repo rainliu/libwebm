@@ -18,7 +18,7 @@ enum TrackType {
     kAudio = 0x2,
 }
 
-struct Tracks {
+pub struct Tracks {
     // Track element list.
     track_entries_: Vec<Track>,
 

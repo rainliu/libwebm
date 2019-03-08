@@ -1,10 +1,13 @@
-use super::chapter::Chapter;
-use super::cue_point::CuesPosition;
+use super::chapters::Chapters;
+use super::cluster::Cluster;
 use super::cues::Cues;
+use super::frame::Frame;
 use super::seek_head::SeekHead;
 use super::segment_info::SegmentInfo;
+use super::tag::Tags;
+use super::tracks::Tracks;
 use super::util;
-use super::write::MkvWriter;
+use super::writer::MkvWriter;
 use super::writer::Writer;
 use crate::MkvId;
 
@@ -22,10 +25,11 @@ enum CuesPosition {
 
 const kDefaultDocTypeVersion: u32 = 4;
 const kDefaultMaxClusterDuration: u64 = 30000000000;
+const kMaxTrackNumber: usize = 126;
 
-struct Segment<'a> {
+pub struct Segment {
     // Seeds the random number generator used to make UIDs.
-    seed_: usize,
+    //seed_: usize,
 
     // WebM elements
     cues_: Cues,
@@ -64,7 +68,7 @@ struct Segment<'a> {
     cluster_end_offset_: i64,
 
     // List of clusters.
-    cluster_list_: Vec<&'a Cluster>,
+    cluster_list_: Vec<Cluster>,
 
     // Indicates whether Cues should be written before or after Clusters
     cues_position_: CuesPosition,
@@ -79,13 +83,7 @@ struct Segment<'a> {
     // the muxer can follow the guideline "Audio blocks that contain the video
     // key frame's timecode should be in the same cluster as the video key frame
     // block."
-    frames_: Vec<&'a Frame>,
-
-    // Number of frame pointers allocated in the frame list.
-    frames_capacity_: i32,
-
-    // Number of frames in the frame list.
-    frames_size_: i32,
+    frames_: Vec<Frame>,
 
     // Flag telling if a video track has been added to the segment.
     has_video_: bool,
@@ -192,6 +190,16 @@ impl Segment {
             doc_type_version_: kDefaultDocTypeVersion,
             doc_type_version_written_: 0,
             duration_: 0.0,
+            cluster_end_offset_: 0,
+            ebml_header_size_: 0,
+            cues_: Cues::new(),
+            seek_head_: SeekHead::new(),
+            segment_info_: SegmentInfo::new(),
+            tracks_: Tracks::new(),
+            chapters_: Chapters::new(),
+            tags_: Tags::new(),
+            last_track_timestamp_: [0; kMaxTrackNumber],
+            track_frames_written_: [0; kMaxTrackNumber],
             //writer_cluster_(NULL),
             //writer_cues_(NULL),
             //writer_header_(NULL)
@@ -254,5 +262,22 @@ impl Segment {
         return self.duration_;
     }
 
+    pub fn MoveCuesBeforeClustersHelper(&mut self, diff: u64, index: usize, cues_size: &mut [u64]) {
+        /*let Some(cue_point) = self.cues_.GetCueByIndex(index){
+            let old_cue_point_size = cue_point.Size();
+            let cluster_pos = cue_point.cluster_pos() + diff;
+            cue_point.set_cluster_pos(cluster_pos);
 
+            let cue_point_size_diff = cue_point.Size() - old_cue_point_size;
+            let cue_size_diff = util::GetCodedUIntSize(cues_size[cue_point_size_diff]) -
+                util::GetCodedUIntSize(cues_size[0]);
+            cues_size[0] += cue_point_size_diff;
+            let diff = cue_size_diff + cue_point_size_diff;
+            if diff > 0 {
+                for i in 0..cues_.cue_entries_size() {
+                    self.MoveCuesBeforeClustersHelper(diff as u64, i, cues_size);
+                }
+            }
+        }*/
+    }
 }

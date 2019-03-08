@@ -7,7 +7,7 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 
-struct Cluster<'a> {
+pub struct Cluster {
     // Number of blocks added to the cluster.
     blocks_added_: i32,
 
@@ -48,19 +48,15 @@ struct Cluster<'a> {
     // Map from track number to the timestamp of the last block written for that
     // track.
     last_block_timestamp_: HashMap<u64, u64>,
-
-    // Pointer to the writer object. Not owned by this class.
-    writer_: &'a mut dyn Writer,
 }
 
-impl<'a> Cluster<'a> {
+impl Cluster {
     pub fn new(
         timecode: u64,
         cues_pos: i64,
         timecode_scale: u64,
         write_last_frame_with_duration: bool,
         fixed_size_timecode: bool,
-        writer: &'a mut dyn Writer,
     ) -> Cluster {
         Cluster {
             blocks_added_: 0,
@@ -75,7 +71,6 @@ impl<'a> Cluster<'a> {
             write_last_frame_with_duration_: write_last_frame_with_duration,
             stored_frames_: HashMap::new(),
             last_block_timestamp_: HashMap::new(),
-            writer_: writer,
         }
     }
     pub fn size_position(&self) -> i64 {
@@ -113,13 +108,13 @@ impl<'a> Cluster<'a> {
         element_size
     }
 
-    fn PreWriteBlock(&mut self) -> bool {
+    fn PreWriteBlock(&mut self, writer: &mut dyn Writer) -> bool {
         if self.finalized_ {
             return false;
         }
 
         if !self.header_written_ {
-            if !self.WriteClusterHeader() {
+            if !self.WriteClusterHeader(writer) {
                 return false;
             }
         }
@@ -127,27 +122,26 @@ impl<'a> Cluster<'a> {
         true
     }
 
-    fn WriteClusterHeader(&mut self) -> bool {
+    fn WriteClusterHeader(&mut self, writer: &mut dyn Writer) -> bool {
         if self.finalized_ {
             return false;
         }
 
-        if let Err(e) = util::WriteID(self.writer_, MkvId::MkvCluster) {
+        if let Err(e) = util::WriteID(writer, MkvId::MkvCluster) {
             return false;
         }
 
         // Save for later.
-        self.size_position_ = self.writer_.get_position() as i64;
+        self.size_position_ = writer.get_position() as i64;
 
         // Write "unknown" (EBML coded -1) as cluster size value. We need to write 8
         // bytes because we do not know how big our cluster will be.
-        if let Err(e) = util::SerializeInt(self.writer_, util::EBML_UNKNOWN_VALUE, 8) {
+        if let Err(e) = util::SerializeInt(writer, util::EBML_UNKNOWN_VALUE, 8) {
             return false;
         }
         let timecode_size = if self.fixed_size_timecode_ { 8 } else { 0 };
         let timecode = self.timecode();
-        if !util::WriteEbmlElementArgsU64(self.writer_, MkvId::MkvTimecode, timecode, timecode_size)
-        {
+        if !util::WriteEbmlElementArgsU64(writer, MkvId::MkvTimecode, timecode, timecode_size) {
             return false;
         }
         self.AddPayloadSize(util::EbmlElementSizeArgsU64(
@@ -176,7 +170,7 @@ impl<'a> Cluster<'a> {
         return rel_timecode;
     }
 
-    pub fn WriteFrame(&mut self, frame: &Frame) -> u64 {
+    pub fn WriteFrame(&mut self, writer: &mut dyn Writer, frame: &Frame) -> u64 {
         if !frame.IsValid() || self.timecode_scale() == 0 {
             return 0;
         }
@@ -192,23 +186,23 @@ impl<'a> Cluster<'a> {
         }
 
         if frame.CanBeSimpleBlock() {
-            frame.WriteSimpleBlock(self.writer_, relative_timecode)
+            frame.WriteSimpleBlock(writer, relative_timecode)
         } else {
             let timecode_scale = self.timecode_scale();
-            frame.WriteBlock(self.writer_, relative_timecode, timecode_scale)
+            frame.WriteBlock(writer, relative_timecode, timecode_scale)
         }
     }
 
-    fn DoWriteFrame(&mut self, frame: &Frame) -> bool {
+    fn DoWriteFrame(&mut self, writer: &mut dyn Writer, frame: &Frame) -> bool {
         if !frame.IsValid() {
             return false;
         }
 
-        if !self.PreWriteBlock() {
+        if !self.PreWriteBlock(writer) {
             return false;
         }
 
-        let element_size = self.WriteFrame(frame);
+        let element_size = self.WriteFrame(writer, frame);
         if element_size == 0 {
             return false;
         }
@@ -219,7 +213,7 @@ impl<'a> Cluster<'a> {
         true
     }
 
-    fn QueueOrWriteFrame(&mut self, frame: &Frame) -> bool {
+    fn QueueOrWriteFrame(&mut self, writer: &mut dyn Writer, frame: &Frame) -> bool {
         if !frame.IsValid() {
             return false;
         }
@@ -227,7 +221,7 @@ impl<'a> Cluster<'a> {
         // If |write_last_frame_with_duration_| is not set, then write the frame right
         // away.
         if !self.write_last_frame_with_duration_ {
-            return self.DoWriteFrame(frame);
+            return self.DoWriteFrame(writer, frame);
         }
 
         // Queue the current frame.
@@ -251,7 +245,7 @@ impl<'a> Cluster<'a> {
                     }
                 }
                 if okay_to_write {
-                    !self.DoWriteFrame(frame_to_write)
+                    !self.DoWriteFrame(writer, frame_to_write)
                 } else {
                     false
                 }
@@ -269,6 +263,7 @@ impl<'a> Cluster<'a> {
 
     pub fn AddNewFrame(
         &mut self,
+        writer: &mut dyn Writer,
         data: &[u8],
         track_number: u64,
         abs_timecode: u64,
@@ -281,15 +276,16 @@ impl<'a> Cluster<'a> {
         frame.set_track_number(track_number);
         frame.set_timestamp(abs_timecode);
         frame.set_is_key(is_key);
-        return self.QueueOrWriteFrame(&frame);
+        return self.QueueOrWriteFrame(writer, &frame);
     }
 
-    pub fn AddFrame(&mut self, frame: &Frame) -> bool {
-        return self.QueueOrWriteFrame(frame);
+    pub fn AddFrame(&mut self, writer: &mut dyn Writer, frame: &Frame) -> bool {
+        return self.QueueOrWriteFrame(writer, frame);
     }
 
     pub fn AddFrameWithAdditional(
         &mut self,
+        writer: &mut dyn Writer,
         data: &[u8],
         additional: &[u8],
         add_id: u64,
@@ -307,11 +303,12 @@ impl<'a> Cluster<'a> {
         frame.set_track_number(track_number);
         frame.set_timestamp(abs_timecode);
         frame.set_is_key(is_key);
-        return self.QueueOrWriteFrame(&frame);
+        return self.QueueOrWriteFrame(writer, &frame);
     }
 
     pub fn AddFrameWithDiscardPadding(
         &mut self,
+        writer: &mut dyn Writer,
         data: &[u8],
         discard_padding: i64,
         track_number: u64,
@@ -326,11 +323,12 @@ impl<'a> Cluster<'a> {
         frame.set_track_number(track_number);
         frame.set_timestamp(abs_timecode);
         frame.set_is_key(is_key);
-        return self.QueueOrWriteFrame(&frame);
+        return self.QueueOrWriteFrame(writer, &frame);
     }
 
     pub fn AddMetadata(
         &mut self,
+        writer: &mut dyn Writer,
         data: &[u8],
         track_number: u64,
         abs_timecode: u64,
@@ -344,10 +342,15 @@ impl<'a> Cluster<'a> {
         frame.set_timestamp(abs_timecode);
         frame.set_duration(duration_timecode);
         frame.set_is_key(true); // All metadata blocks are keyframes.
-        return self.QueueOrWriteFrame(&frame);
+        return self.QueueOrWriteFrame(writer, &frame);
     }
 
-    pub fn finalize(&mut self, set_last_frame_duration: bool, duration: u64) -> bool {
+    pub fn finalize(
+        &mut self,
+        writer: &mut dyn Writer,
+        set_last_frame_duration: bool,
+        duration: u64,
+    ) -> bool {
         if self.finalized_ {
             return false;
         }
@@ -378,7 +381,7 @@ impl<'a> Cluster<'a> {
                 }
 
                 // Write the frame and remove it from |stored_frames_|.
-                let wrote_frame = self.DoWriteFrame(&frame);
+                let wrote_frame = self.DoWriteFrame(writer, &frame);
                 if let Some(frames) = self.stored_frames_.get_mut(&frame.track_number()) {
                     if !frames.is_empty() {
                         min_heap.push(Reverse(frames.remove(0)));
@@ -395,19 +398,19 @@ impl<'a> Cluster<'a> {
             return false;
         }
 
-        if self.writer_.seekable() {
-            let pos = self.writer_.get_position();
+        if writer.seekable() {
+            let pos = writer.get_position();
 
-            if let Err(e) = self.writer_.set_position(self.size_position_ as u64) {
+            if let Err(e) = writer.set_position(self.size_position_ as u64) {
                 return false;
             }
 
             let payload_size = self.payload_size();
-            if let Err(e) = util::WriteUIntSize(self.writer_, payload_size, 8) {
+            if let Err(e) = util::WriteUIntSize(writer, payload_size, 8) {
                 return false;
             }
 
-            if let Err(e) = self.writer_.set_position(pos) {
+            if let Err(e) = writer.set_position(pos) {
                 return false;
             }
         }
@@ -417,7 +420,7 @@ impl<'a> Cluster<'a> {
         return true;
     }
 
-    pub fn Finalize(&mut self) -> bool {
-        !self.write_last_frame_with_duration_ && self.finalize(false, 0)
+    pub fn Finalize(&mut self, writer: &mut dyn Writer) -> bool {
+        !self.write_last_frame_with_duration_ && self.finalize(writer, false, 0)
     }
 }
